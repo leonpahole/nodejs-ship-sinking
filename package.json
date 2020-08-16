@@ -1,0 +1,13 @@
+{
+  "name": "ship-sinking-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Leon Pahole",
+  "license": "MIT",
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
