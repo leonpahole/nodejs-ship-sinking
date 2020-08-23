@@ -14,10 +14,13 @@ WORKDIR /opt/node_app
 
 USER node
 COPY package.json ./
-RUN yarn install --no-optional && yarn cache clean --force
+RUN yarn install --ignore-scripts --frozen-lockfile
+
 ENV PATH /opt/node_app/node_modules/.bin:$PATH
 
 WORKDIR /opt/node_app/app
 COPY . .
+
+RUN npx tsc --outDir ../dist 
 
 CMD [ "node", "./bin/www" ]

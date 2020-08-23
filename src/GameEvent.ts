@@ -1,0 +1,17 @@
+export enum GameEvent {
+  CONNECT = "connect",
+  DISCONNECT = "disconnect",
+  SHIPS_PICKED = "shipsPicked",
+  ENEMY_READY = "enemyReady",
+  GAME_INFO = "gameStarted",
+  TURN_CHANGED = "turnChanged",
+  SHOOT_CELL = "shootCell",
+  SHOOT_CELL_RESULT = "shootCellResult",
+  CELL_SHOT = "cellShot",
+  GAME_OVER = "gameOver",
+  PLAYER_LEFT = "playerLeft",
+  ENEMY_LEFT = "enemyLeft",
+  NOT_READY = "notReady",
+  ENEMY_CONNECTED_TO_ROOM = "enemyConnectedToRoom",
+  ENEMY_DISCONNECTED_FROM_ROOM = "enemyDisconnectedFromRoom",
+}
