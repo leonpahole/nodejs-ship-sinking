@@ -1,4 +1,4 @@
-import { Room, Player, PlayerStatus } from "./Room";
+import { Room, Player, PlayerStatus, ChatMessage } from "./Room";
 import { GameEvent } from "./GameEvent";
 import { CellState } from "./CellState";
 import { GameState } from "./GameState";
@@ -39,6 +39,17 @@ export const sendEnemyJoinedOrLeftRoomSignal = (
         : GameEvent.ENEMY_CONNECTED_TO_ROOM
     );
   }
+
+  return createChatMessage(
+    null,
+    player.name + " has " + (left ? "left" : "joined") + " the room."
+  );
+};
+
+export const setPlayerReady = (player: Player, stateTable: number[][]) => {
+  player.status = PlayerStatus.READY;
+  player.stateTable = stateTable;
+  return createChatMessage(null, player.name + " is ready.");
 };
 
 export const sendStartGameSignalToPlayers = (gameData: GameData) => {
@@ -46,6 +57,8 @@ export const sendStartGameSignalToPlayers = (gameData: GameData) => {
   sendGameInfoSignalToPlayer(gameData.room.player2, gameData.room);
 
   pickStartingPlayer(gameData);
+
+  return createChatMessage(null, "Game has started!");
 };
 
 const hideCell = (cell: number) => {
@@ -80,6 +93,9 @@ export const sendGameInfoSignalToPlayer = (player: Player, room: Room) => {
     enemyReady: enemy?.status === PlayerStatus.READY,
     enemyConnected: enemy != null && (enemy.isComputer || enemy.socket != null),
     amIReady: player.status === PlayerStatus.READY,
+    isComputer: enemy ? enemy.isComputer : false,
+    chats: room.chats.map((c) => c.transformForPlayer(player)),
+    enemyName: enemy ? enemy.name : "",
   };
 
   if (player.isComputer === false) {
@@ -111,18 +127,58 @@ export const pickStartingPlayer = (gameData: GameData) => {
 
 export const onPlayerLeave = (playerThatLeft: Player, room: Room) => {
   if (room.gameState === GameState.FINISHED) {
-    return;
+    return null;
   }
 
   const enemy = getEnemy(playerThatLeft, room);
   room.gameState = GameState.FINISHED;
+  let playerWonText = "";
   if (enemy && enemy.isComputer === false) {
     enemy.socket?.emit(GameEvent.ENEMY_LEFT);
+    playerWonText = " " + enemy.name + " won!";
+  }
+
+  return createChatMessage(
+    null,
+    playerThatLeft.name + " left." + playerWonText
+  );
+};
+
+export const createChatMessage = (sender: Player | null, message: string) => {
+  return new ChatMessage(
+    sender ? sender.name : null,
+    sender ? sender.id : null,
+    message
+  );
+};
+
+export const addMessageToChatsAndBroadcastToBothPlayers = (
+  room: Room,
+  chatMessage: ChatMessage
+) => {
+  room.chats.push(chatMessage);
+  broadcastChatMessageToBothPlayers(room, chatMessage);
+};
+
+const broadcastChatMessageToBothPlayers = (
+  room: Room,
+  chatMessage: ChatMessage
+) => {
+  sendChatToPlayer(room.player1, chatMessage);
+  sendChatToPlayer(room.player2, chatMessage);
+};
+
+const sendChatToPlayer = (player: Player, chatMessage: ChatMessage) => {
+  if (player && player.socket && player.isComputer === false) {
+    player.socket.emit(GameEvent.CHAT_MESSAGE_SENT, {
+      chatMessage: chatMessage.transformForPlayer(player),
+    });
   }
 };
 
 export const setPlayerNotReady = (player: Player) => {
   player.status = PlayerStatus.PICKING;
+  return createChatMessage(null, player.name + " changed their mind!");
 };
 
 export const sendEnemyReadySignal = (player: Player, gameData: GameData) => {
@@ -218,6 +274,17 @@ export const shootCell = async (
       }
 
       hasEnemyLost = hasPlayerLost(enemy);
+
+      broadcastChatMessageToBothPlayers(
+        gameData.room,
+        createChatMessage(
+          null,
+          player.name +
+            " has destroyed" +
+            enemy.name +
+            "'s ship. Looks like a lot of damage."
+        )
+      );
     }
   }
 
@@ -230,6 +297,12 @@ export const shootCell = async (
     player.status = PlayerStatus.HAS_WON;
     sendGameOverSignal(enemy, false);
     sendGameOverSignal(player, true);
+
+    broadcastChatMessageToBothPlayers(
+      gameData.room,
+      createChatMessage(null, player.name + " has won! They earned a hug.")
+    );
+
     return false;
   } else if (hitState === CellState.MISSED) {
     // next player's turn

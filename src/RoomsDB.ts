@@ -52,21 +52,6 @@ export class RoomsDB {
     return true;
   }
 
-  public setPlayerReady(
-    roomId: string,
-    playerId: string,
-    stateTable: number[][]
-  ): boolean {
-    const player: Player | null = this.getPlayerByRoomIdAndId(roomId, playerId);
-    if (!player) {
-      return false;
-    }
-
-    player.status = PlayerStatus.READY;
-    player.stateTable = stateTable;
-    return true;
-  }
-
   public bothPlayersReady(roomId: string): boolean {
     const room = this.getRoomById(roomId);
     if (!room) {

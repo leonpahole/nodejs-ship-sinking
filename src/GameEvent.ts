@@ -14,4 +14,5 @@ export enum GameEvent {
   NOT_READY = "notReady",
   ENEMY_CONNECTED_TO_ROOM = "enemyConnectedToRoom",
   ENEMY_DISCONNECTED_FROM_ROOM = "enemyDisconnectedFromRoom",
+  CHAT_MESSAGE_SENT = "chatMessageSent",
 }

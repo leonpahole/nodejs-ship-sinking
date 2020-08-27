@@ -3,6 +3,29 @@ import { GameState } from "./GameState";
 import { randomPoint } from "./GameUtils";
 import crypto from "crypto";
 
+export class ChatMessage {
+  from: string | null;
+  fromId: string | null;
+  message: string;
+  isMine: boolean;
+
+  constructor(from: string | null, fromId: string | null, message: string) {
+    this.from = from;
+    this.fromId = fromId;
+    this.message = message;
+    this.isMine = false;
+  }
+
+  public transformForPlayer(player: Player) {
+    let isMine = false;
+    if (this.fromId === player.id) {
+      isMine = true;
+    }
+
+    return { from: this.from, message: this.message, isMine };
+  }
+}
+
 export class Room {
   id: string;
   player1: Player;
@@ -10,6 +33,7 @@ export class Room {
   width: number;
   height: number;
   gameState: number;
+  chats: ChatMessage[] = [];
 
   constructor(id: string, width: number, height: number) {
     this.id = id;
@@ -30,6 +54,7 @@ export enum PlayerStatus {
 
 export class Player {
   id: string;
+  name: string;
   isComputer: boolean;
   stateTable: number[][];
   status: PlayerStatus;
@@ -70,7 +95,7 @@ const createId = (length: number) => {
 };
 
 export const createComputer = (width: number, height: number): Player => {
-  const player: Player = new Player("", true);
+  const player: Player = new Player("Comp Uter", true);
   player.stateTable = generateRandomShips(width, height);
   player.status = PlayerStatus.READY;
   return player;

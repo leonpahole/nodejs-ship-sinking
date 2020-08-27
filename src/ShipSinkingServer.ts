@@ -15,6 +15,9 @@ import {
   onPlayerLeave,
   setPlayerNotReady,
   sendEnemyJoinedOrLeftRoomSignal,
+  addMessageToChatsAndBroadcastToBothPlayers,
+  createChatMessage,
+  setPlayerReady,
 } from "./GameUtils";
 import { GameState } from "./GameState";
 import { expressLogger, logger } from "./logger";
@@ -126,10 +129,16 @@ export class ShipSinkingServer {
 
       // send initial data that might have been saved before from previous connections
       sendInitialExistingData(socket.gameData);
-      sendEnemyJoinedOrLeftRoomSignal(
+
+      const chatMessageJoined = sendEnemyJoinedOrLeftRoomSignal(
         socket.gameData.player,
         socket.gameData.room,
         false
+      );
+
+      addMessageToChatsAndBroadcastToBothPlayers(
+        socket.gameData.room,
+        chatMessageJoined
       );
 
       socket.on(
@@ -137,10 +146,14 @@ export class ShipSinkingServer {
         ({ stateTable }: { stateTable: number[][] }) => {
           logger.info("Ships picked for user %s", socket.gameData.player.id);
 
-          this.roomsDB.setPlayerReady(
-            socket.gameData.room.id,
-            socket.gameData.player.id,
+          const chatMessageReady = setPlayerReady(
+            socket.gameData.player,
             stateTable
+          );
+
+          addMessageToChatsAndBroadcastToBothPlayers(
+            socket.gameData.room,
+            chatMessageReady
           );
 
           const areBothPlayersReady: boolean = this.roomsDB.bothPlayersReady(
@@ -153,7 +166,13 @@ export class ShipSinkingServer {
               socket.gameData.room.id
             );
             socket.gameData.room.gameState = GameState.IN_PROGRESS;
-            sendStartGameSignalToPlayers(socket.gameData);
+            const chatMessageGameStarted = sendStartGameSignalToPlayers(
+              socket.gameData
+            );
+            addMessageToChatsAndBroadcastToBothPlayers(
+              socket.gameData.room,
+              chatMessageGameStarted
+            );
           } else {
             sendEnemyReadySignal(socket.gameData.player, socket.gameData);
           }
@@ -168,7 +187,13 @@ export class ShipSinkingServer {
           socket.gameData.room.id
         );
 
-        setPlayerNotReady(socket.gameData.player);
+        const chatMessageNotReady = setPlayerNotReady(socket.gameData.player);
+
+        addMessageToChatsAndBroadcastToBothPlayers(
+          socket.gameData.room,
+          chatMessageNotReady
+        );
+
         sendEnemyReadySignal(socket.gameData.player, socket.gameData);
       });
 
@@ -185,17 +210,46 @@ export class ShipSinkingServer {
 
       socket.on(GameEvent.PLAYER_LEFT, () => {
         logger.info("Client %s left", socket.gameData.player.id);
-        onPlayerLeave(socket.gameData.player, socket.gameData.room);
+        const chatMessageLeave = onPlayerLeave(
+          socket.gameData.player,
+          socket.gameData.room
+        );
+
+        if (chatMessageLeave) {
+          addMessageToChatsAndBroadcastToBothPlayers(
+            socket.gameData.room,
+            chatMessageLeave
+          );
+        }
       });
+
+      socket.on(
+        GameEvent.CHAT_MESSAGE_SENT,
+        ({ message }: { message: string }) => {
+          logger.info("Client %s sent %s", socket.gameData.player.id, message);
+
+          const chatMessage = createChatMessage(gameData.player, message);
+
+          addMessageToChatsAndBroadcastToBothPlayers(
+            socket.gameData.room,
+            chatMessage
+          );
+        }
+      );
 
       socket.on(GameEvent.DISCONNECT, () => {
         logger.info("Client %s disconnected", socket.gameData.player.id);
-        sendEnemyJoinedOrLeftRoomSignal(
+        const chatMessage = sendEnemyJoinedOrLeftRoomSignal(
           socket.gameData.player,
           socket.gameData.room,
           true
         );
         socket.gameData.player.socket = undefined;
+
+        addMessageToChatsAndBroadcastToBothPlayers(
+          socket.gameData.room,
+          chatMessage
+        );
       });
     });
   }
@@ -205,13 +259,16 @@ export class ShipSinkingServer {
     // get query parameters
     const roomId: string | undefined = socket.handshake.query.roomId;
     const playerId: string | undefined = socket.handshake.query.playerId;
+    const playerName: string | undefined = socket.handshake.query.playerName;
 
     // validate that they exist and are not empty
     if (
       roomId == null ||
       roomId.length === 0 ||
       playerId == null ||
-      playerId.length === 0
+      playerId.length === 0 ||
+      playerName == null ||
+      playerName.length === 0
     ) {
       return null;
     }
@@ -231,6 +288,8 @@ export class ShipSinkingServer {
       console.log("Player does not belong to this room");
       return null;
     }
+
+    player.name = playerName;
 
     // check if player has existing socket connections and disconnect it
     if (player.socket) {
