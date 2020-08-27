@@ -1,6 +1,6 @@
 {
   "name": "ship-sinking-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "server.js",
   "author": "Leon Pahole",
   "license": "MIT",
@@ -27,11 +27,14 @@
     "socket.io": "^2.3.0"
   },
   "scripts": {
-    "dev": "nodemon server.ts",
-    "build": "tsc",
-    "watch": "tsc -w -p .",
-    "debug": "ts-node-dev server.ts",
-    "dev:debug": "nodemon --watch ../dist --inspect=0.0.0.0:9229 --nolazy ../server.js",
-    "start": "node ./dist/server.js"
+    "clean": "rm -rf lib",
+    "build": "tsc -p tsconfig.build.json",
+    "format": "prettier --write '*.{yml,json,md}' '{src,test}/**/*'",
+    "start": "node 'lib/server.js'",
+    "start:dev": "tsc-watch -p tsconfig.build.json --onSuccess 'node lib/server.js'",
+    "test": "jest --preset ts-jest",
+    "prebuild": "npm run clean",
+    "prestart": "npm run build",
+    "prestart:dev": "npm run clean"
   }
 }
