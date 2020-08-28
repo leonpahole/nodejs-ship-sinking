@@ -23,7 +23,7 @@ import { GameState } from "./GameState";
 import { expressLogger, logger } from "./logger";
 
 export class ShipSinkingServer {
-  public static readonly PORT: number = 8080;
+  public static readonly PORT: number = 4000;
   private _app: express.Application;
   private server: Server;
   private io!: SocketIO.Server;
@@ -42,6 +42,7 @@ export class ShipSinkingServer {
     this.initSocket();
     this.listen();
   }
+
   private initSocket(): void {
     this.io = socketio(this.server);
   }
