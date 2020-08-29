@@ -95,7 +95,8 @@ const createId = (length: number) => {
 };
 
 export const createComputer = (width: number, height: number): Player => {
-  const player: Player = new Player("Comp Uter", true);
+  const player: Player = new Player("", true);
+  player.name = "Comp Uter";
   player.stateTable = generateRandomShips(width, height);
   player.status = PlayerStatus.READY;
   return player;

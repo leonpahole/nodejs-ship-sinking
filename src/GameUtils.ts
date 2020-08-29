@@ -280,7 +280,7 @@ export const shootCell = async (
         createChatMessage(
           null,
           player.name +
-            " has destroyed" +
+            " has destroyed " +
             enemy.name +
             "'s ship. Looks like a lot of damage."
         )
