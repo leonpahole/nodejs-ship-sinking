@@ -222,6 +222,18 @@ export class ShipSinkingServer {
             chatMessageLeave
           );
         }
+
+        const bothPlayersLeft: boolean = this.roomsDB.bothPlayersLeft(
+          socket.gameData.room.id
+        );
+
+        if (bothPlayersLeft) {
+          logger.info(
+            "Both players left, removing room %s!",
+            socket.gameData.room.id
+          );
+          this.roomsDB.removeRoom(socket.gameData.room.id);
+        }
       });
 
       socket.on(
@@ -278,7 +290,7 @@ export class ShipSinkingServer {
     const room = this.roomsDB.getRoomById(roomId);
 
     if (room == null) {
-      console.log("Room does not exist");
+      logger.error("Room does not exist");
       return null;
     }
 
@@ -286,7 +298,7 @@ export class ShipSinkingServer {
     const player = this.roomsDB.getPlayerByRoomIdAndId(roomId, playerId);
 
     if (player == null) {
-      console.log("Player does not belong to this room");
+      logger.error("Player does not belong to this room");
       return null;
     }
 

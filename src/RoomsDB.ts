@@ -63,4 +63,27 @@ export class RoomsDB {
       room.player2?.status === PlayerStatus.READY
     );
   }
+
+  public bothPlayersLeft(roomId: string): boolean {
+    const room = this.getRoomById(roomId);
+    if (!room) {
+      return false;
+    }
+
+    return (
+      room.player1.status === PlayerStatus.LEFT &&
+      (room.player2 == null ||
+        room.player2.isComputer === true ||
+        room.player2.status === PlayerStatus.LEFT)
+    );
+  }
+
+  public removeRoom(roomId: string) {
+    const roomIndex = this.rooms.findIndex((r) => r.id === roomId);
+    if (roomIndex < 0) {
+      return;
+    }
+
+    this.rooms.splice(roomIndex, 1);
+  }
 }

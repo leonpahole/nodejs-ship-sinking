@@ -36,7 +36,10 @@ export const sendEnemyJoinedOrLeftRoomSignal = (
     enemy.socket?.emit(
       left
         ? GameEvent.ENEMY_DISCONNECTED_FROM_ROOM
-        : GameEvent.ENEMY_CONNECTED_TO_ROOM
+        : GameEvent.ENEMY_CONNECTED_TO_ROOM,
+      {
+        enemyName: player.name,
+      }
     );
   }
 
@@ -126,6 +129,8 @@ export const pickStartingPlayer = (gameData: GameData) => {
 };
 
 export const onPlayerLeave = (playerThatLeft: Player, room: Room) => {
+  playerThatLeft.status = PlayerStatus.LEFT;
+
   if (room.gameState === GameState.FINISHED) {
     return null;
   }

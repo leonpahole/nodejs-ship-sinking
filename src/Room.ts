@@ -50,6 +50,7 @@ export enum PlayerStatus {
   ON_TURN,
   HAS_WON,
   HAS_LOST,
+  LEFT,
 }
 
 export class Player {
